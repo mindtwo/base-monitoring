@@ -26,7 +26,7 @@ final class SymfonyProcessRunner implements ProcessRunner
         return self::supported() && (new NativeProcessRunner)->available();
     }
 
-    public function run(array $command, ?int $timeoutSeconds = 15): ProcessResult
+    public function run(array $command, ?int $timeoutSeconds = 15, array $extraPaths = []): ProcessResult
     {
         if ($command === []) {
             return new ProcessResult(false, '', 'No command given.');
@@ -38,6 +38,10 @@ final class SymfonyProcessRunner implements ProcessRunner
 
         $process = new Process(array_values($command));
         $process->setTimeout($timeoutSeconds !== null ? (float) $timeoutSeconds : null);
+
+        // Merge over the inherited environment so wrapper scripts find their
+        // interpreter; only PATH is overridden, every other variable is kept.
+        $process->setEnv(['PATH' => ProcessEnvironment::augmentedPath($extraPaths)]);
 
         try {
             $process->run();

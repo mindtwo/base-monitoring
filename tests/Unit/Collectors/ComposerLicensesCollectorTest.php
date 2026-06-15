@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use Mindtwo\Monitoring\Collectors\ComposerLicensesCollector;
 use Mindtwo\Monitoring\Data\ProcessResult;
+use Mindtwo\Monitoring\Process\ExecutableFinder;
 use Mindtwo\Monitoring\Tests\Fakes\FakeProcessRunner;
+use Mindtwo\Monitoring\Tests\Support\TemporaryDirectories;
 
 test('licenses are summarized and listed per package', function () {
     $payload = json_encode([
@@ -51,4 +53,13 @@ test('timeouts are reported explicitly', function () {
 
     expect($result->status)->toBe('failed')
         ->and($result->error)->toContain('timed out');
+});
+
+test('php directory is passed so composer can resolve its interpreter under a restricted PATH', function () {
+    $bin = TemporaryDirectories::binDir(['php', 'composer']);
+    $runner = (new FakeProcessRunner)->onOutput('composer licenses', '{"dependencies": []}');
+
+    (new ComposerLicensesCollector($runner, composerProject(), new ExecutableFinder($bin, [])))->collect();
+
+    expect($runner->extraPaths[0])->toBe([$bin]);
 });

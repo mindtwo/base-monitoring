@@ -27,7 +27,7 @@ final class NativeProcessRunner implements ProcessRunner
             && function_exists('proc_terminate');
     }
 
-    public function run(array $command, ?int $timeoutSeconds = 15): ProcessResult
+    public function run(array $command, ?int $timeoutSeconds = 15, array $extraPaths = []): ProcessResult
     {
         if ($command === []) {
             return new ProcessResult(false, '', 'No command given.');
@@ -52,7 +52,13 @@ final class NativeProcessRunner implements ProcessRunner
         set_error_handler(static fn (): bool => true);
 
         try {
-            $process = proc_open(array_values($command), $descriptors, $pipes);
+            $process = proc_open(
+                array_values($command),
+                $descriptors,
+                $pipes,
+                null,
+                ProcessEnvironment::withAugmentedPath($extraPaths)
+            );
         } finally {
             restore_error_handler();
         }

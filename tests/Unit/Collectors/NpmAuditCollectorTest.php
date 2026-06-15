@@ -96,3 +96,23 @@ test('a missing npm binary is unsupported', function () {
 
     expect($collector->supported())->toBeFalse();
 });
+
+test('node directory is passed so npm can resolve its interpreter under a restricted PATH', function () {
+    $bin = TemporaryDirectories::binDir(['node', 'npm']);
+    $runner = (new FakeProcessRunner)->onOutput('npm', '{"metadata":{"vulnerabilities":{"total":0}}}');
+
+    (new NpmAuditCollector($runner, npmAuditProject(), new ExecutableFinder($bin, [])))->collect();
+
+    expect($runner->extraPaths[0])->toBe([$bin]);
+});
+
+test('the node directory is preferred when node lives apart from npm', function () {
+    $npmDir = TemporaryDirectories::binDir(['npm']);
+    $nodeDir = TemporaryDirectories::binDir(['node']);
+    $runner = (new FakeProcessRunner)->onOutput('npm', '{"metadata":{"vulnerabilities":{"total":0}}}');
+
+    $finder = new ExecutableFinder($npmDir.PATH_SEPARATOR.$nodeDir, []);
+    (new NpmAuditCollector($runner, npmAuditProject(), $finder))->collect();
+
+    expect($runner->extraPaths[0])->toBe([$nodeDir, $npmDir]);
+});

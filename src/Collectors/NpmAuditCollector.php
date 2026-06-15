@@ -61,7 +61,7 @@ final class NpmAuditCollector extends AbstractCollector
             $this->projectRoot,
             'audit',
             '--json',
-        ], $this->timeoutSeconds);
+        ], $this->timeoutSeconds, $this->interpreterPaths($npm));
 
         if ($result->timedOut) {
             return CollectionResult::failed($this->key(), 'npm audit timed out.');
@@ -90,6 +90,27 @@ final class NpmAuditCollector extends AbstractCollector
         return $actionable > 0
             ? CollectionResult::warning($this->key(), $data)
             : CollectionResult::ok($this->key(), $data);
+    }
+
+    /**
+     * npm re-execs node through its "#!/usr/bin/env node" shebang, so the
+     * spawned process needs node's directory on its PATH even when the
+     * inherited PATH is restricted (php-fpm, cron). node usually sits beside
+     * npm, so npm's own directory is included as a fallback.
+     *
+     * @return array<int, string>
+     */
+    private function interpreterPaths(string $npm): array
+    {
+        $paths = [dirname($npm)];
+
+        $nodeDirectory = $this->executables->directoryOf('node');
+
+        if ($nodeDirectory !== null) {
+            array_unshift($paths, $nodeDirectory);
+        }
+
+        return array_values(array_unique($paths));
     }
 
     /**

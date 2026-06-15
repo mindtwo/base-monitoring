@@ -68,6 +68,30 @@ final class ExecutableFinder
     }
 
     /**
+     * The directory containing the given binary, or null when it cannot be
+     * located. Used to widen a spawned process's PATH so wrapper scripts can
+     * resolve an interpreter they re-exec (composer → php, npm → node).
+     */
+    public function directoryOf(string $binary): ?string
+    {
+        $path = $this->find($binary);
+
+        return $path !== null ? dirname($path) : null;
+    }
+
+    /**
+     * The standard system bin directories scanned in addition to PATH. Exposed
+     * so spawned processes can be given a PATH at least as wide as the finder's
+     * own search (see ProcessEnvironment).
+     *
+     * @return array<int, string>
+     */
+    public static function fallbackDirectories(): array
+    {
+        return self::FALLBACK_DIRECTORIES;
+    }
+
+    /**
      * @return array<int, string>
      */
     private function candidateNames(string $binary): array

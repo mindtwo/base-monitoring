@@ -86,6 +86,23 @@ test('the working directory is passed to composer', function () {
         ->and($runner->commands[0])->toContain('--format=json');
 });
 
+test('php directory is passed so composer can resolve its interpreter under a restricted PATH', function () {
+    $bin = TemporaryDirectories::binDir(['php', 'composer']);
+    $runner = (new FakeProcessRunner)->onOutput('composer audit', '{"advisories": []}');
+
+    (new ComposerAuditCollector($runner, composerProject(), new ExecutableFinder($bin, [])))->collect();
+
+    expect($runner->extraPaths[0])->toBe([$bin]);
+});
+
+test('no extra paths are passed when php cannot be located', function () {
+    $runner = (new FakeProcessRunner)->onOutput('composer audit', '{"advisories": []}');
+
+    (new ComposerAuditCollector($runner, composerProject(), finderWith(['composer'])))->collect();
+
+    expect($runner->extraPaths[0])->toBe([]);
+});
+
 test('unparsable output fails with the stderr excerpt', function () {
     $runner = (new FakeProcessRunner)
         ->on('composer audit', new ProcessResult(false, '', 'network unreachable', 1));

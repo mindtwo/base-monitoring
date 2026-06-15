@@ -20,6 +20,10 @@ interface ProcessRunner
 
     /**
      * @param  array<int, string>  $command
+     * @param  array<int, string>  $extraPaths  Directories prepended to the child
+     *                                          process PATH so wrapper scripts can
+     *                                          locate an interpreter they re-exec
+     *                                          (e.g. composer → php, npm → node).
      */
-    public function run(array $command, ?int $timeoutSeconds = 15): ProcessResult;
+    public function run(array $command, ?int $timeoutSeconds = 15, array $extraPaths = []): ProcessResult;
 }

@@ -5,6 +5,19 @@ All notable changes to `mindtwo/base-monitoring` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+- `composer_audit`, `composer_licenses` and `npm_audit` no longer fail with
+  `env: php: No such file or directory` / `env: node: No such file or directory`
+  when run under a restricted PATH (php-fpm, cron, launchd). The `ExecutableFinder`
+  could locate the `composer`/`npm` wrappers via its fallback directories, but the
+  spawned process did not inherit a PATH wide enough for the interpreter those
+  wrappers re-exec through `#!/usr/bin/env php|node`. Process runs now accept extra
+  PATH directories, and the affected collectors pass the directory of their
+  interpreter (composer → php, npm → node) so the shebang resolves.
+
 ## 1.0.0 - 2026-06-13
 
 Initial release.

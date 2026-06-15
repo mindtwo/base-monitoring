@@ -40,3 +40,14 @@ test('processes exceeding the timeout are terminated', function () {
 test('an empty command fails gracefully', function () {
     expect((new SymfonyProcessRunner)->run([])->successful)->toBeFalse();
 });
+
+test('extra paths are prepended to the child process PATH', function () {
+    $result = (new SymfonyProcessRunner)->run(
+        [PHP_BINARY, '-r', 'echo getenv("PATH");'],
+        15,
+        ['/opt/m2-interpreter/bin']
+    );
+
+    expect($result->successful)->toBeTrue()
+        ->and(explode(PATH_SEPARATOR, $result->output)[0])->toBe('/opt/m2-interpreter/bin');
+});

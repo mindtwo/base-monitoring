@@ -61,7 +61,7 @@ final class ComposerAuditCollector extends AbstractCollector
             '--format=json',
             '--no-interaction',
             '--working-dir='.$this->projectRoot,
-        ], $this->timeoutSeconds);
+        ], $this->timeoutSeconds, $this->interpreterPaths());
 
         if ($result->timedOut) {
             return CollectionResult::failed($this->key(), 'composer audit timed out.');
@@ -89,6 +89,20 @@ final class ComposerAuditCollector extends AbstractCollector
         return $advisories === []
             ? CollectionResult::ok($this->key(), $data)
             : CollectionResult::warning($this->key(), $data);
+    }
+
+    /**
+     * Composer re-execs php through its "#!/usr/bin/env php" shebang, so the
+     * spawned process needs php's directory on its PATH even when the inherited
+     * PATH is restricted (php-fpm, cron).
+     *
+     * @return array<int, string>
+     */
+    private function interpreterPaths(): array
+    {
+        $phpDirectory = $this->executables->directoryOf('php');
+
+        return $phpDirectory !== null ? [$phpDirectory] : [];
     }
 
     /**

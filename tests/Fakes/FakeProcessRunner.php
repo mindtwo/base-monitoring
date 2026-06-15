@@ -20,6 +20,9 @@ final class FakeProcessRunner implements ProcessRunner
     /** @var array<int, string> joined command lines, in execution order */
     public array $commands = [];
 
+    /** @var array<int, array<int, string>> extra PATH directories, one entry per call in execution order */
+    public array $extraPaths = [];
+
     public function __construct(private bool $available = true) {}
 
     public function on(string $pattern, ProcessResult $result): self
@@ -39,11 +42,12 @@ final class FakeProcessRunner implements ProcessRunner
         return $this->available;
     }
 
-    public function run(array $command, ?int $timeoutSeconds = 15): ProcessResult
+    public function run(array $command, ?int $timeoutSeconds = 15, array $extraPaths = []): ProcessResult
     {
         $joined = $this->join($command);
 
         $this->commands[] = $joined;
+        $this->extraPaths[] = $extraPaths;
 
         foreach ($this->handlers as $handler) {
             if (str_contains($joined, $handler['pattern'])) {
