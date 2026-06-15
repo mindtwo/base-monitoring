@@ -1,0 +1,73 @@
+{
+    "name": "mindtwo/base-monitoring",
+    "description": "Framework-agnostic core of the mindtwo monitoring suite. Safely collects infrastructure, package and security-audit data and ships it as a signed snapshot.",
+    "keywords": [
+        "mindtwo",
+        "monitoring",
+        "infrastructure",
+        "security",
+        "audit"
+    ],
+    "homepage": "https://github.com/mindtwo/base-monitoring",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "mindtwo GmbH",
+            "email": "info@mindtwo.de",
+            "homepage": "https://www.mindtwo.de",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.0",
+        "ext-json": "*",
+        "composer-runtime-api": "^2.0"
+    },
+    "require-dev": {
+        "laravel/pint": "^1.13",
+        "pestphp/pest": "^2.34|^3.0|^4.0",
+        "phpstan/phpstan": "^1.11|^2.0",
+        "phpstan/phpstan-deprecation-rules": "^1.1|^2.0",
+        "symfony/process": "^5.4|^6.0|^7.0|^8.0"
+    },
+    "suggest": {
+        "ext-curl": "Allows the HttpTransport to use curl instead of PHP streams.",
+        "symfony/process": "Runs external commands through symfony/process instead of the native proc_open runner."
+    },
+    "autoload": {
+        "psr-4": {
+            "Mindtwo\\Monitoring\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Mindtwo\\Monitoring\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint",
+        "lint": "vendor/bin/pint --test",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ],
+        "refresh-slugs": "@php bin/refresh-slugs.php"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.x-dev"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

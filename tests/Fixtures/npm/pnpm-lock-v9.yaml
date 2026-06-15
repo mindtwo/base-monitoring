@@ -1,0 +1,36 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.2.0
+
+packages:
+
+  '@scope/tool@2.1.4':
+    resolution: {integrity: sha512-fake}
+
+  react@18.2.0:
+    resolution: {integrity: sha512-fake}
+    engines: {node: '>=0.10.0'}
+
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-fake}
+    hasBin: true
+
+snapshots:
+
+  '@scope/tool@2.1.4': {}
+
+  react@18.2.0:
+    dependencies:
+      loose-envify: 1.4.0
+
+  loose-envify@1.4.0: {}
