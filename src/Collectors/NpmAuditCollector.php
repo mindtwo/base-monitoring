@@ -10,9 +10,10 @@ use Mindtwo\Monitoring\Process\ExecutableFinder;
 use Mindtwo\Monitoring\Process\ProcessRunnerFactory;
 
 /**
- * Vulnerability counts for the installed npm packages via `npm audit --json`.
- * npm exits non-zero when vulnerabilities exist — the JSON on stdout is parsed
- * either way.
+ * Vulnerabilities for the installed npm packages via `npm audit --json`:
+ * severity counts plus the individual advisories so consumers can see *which*
+ * packages are affected, not just how many. npm exits non-zero when
+ * vulnerabilities exist — the JSON on stdout is parsed either way.
  */
 final class NpmAuditCollector extends AbstractCollector
 {
@@ -83,8 +84,13 @@ final class NpmAuditCollector extends AbstractCollector
         }
 
         $counts = $this->vulnerabilityCounts($decoded);
+        $advisories = $this->extractAdvisories($decoded);
 
-        $data = ['vulnerabilities' => $counts];
+        $data = [
+            'vulnerabilities' => $counts,
+            'advisories_count' => count($advisories),
+            'advisories' => $advisories,
+        ];
         $actionable = ($counts['low'] ?? 0) + ($counts['moderate'] ?? 0) + ($counts['high'] ?? 0) + ($counts['critical'] ?? 0);
 
         return $actionable > 0
@@ -138,5 +144,128 @@ final class NpmAuditCollector extends AbstractCollector
         }
 
         return $counts;
+    }
+
+    /**
+     * The individual advisories, normalized to the same shape as
+     * ComposerAuditCollector (plus npm's `fix_available`). Supports the npm v7+
+     * report (top-level "vulnerabilities" map carrying a "via" array) and the
+     * legacy v6 shape (top-level "advisories" map keyed by advisory id).
+     *
+     * @param  array<string, mixed>  $decoded
+     * @return array<int, array<string, mixed>>
+     */
+    private function extractAdvisories(array $decoded): array
+    {
+        if (isset($decoded['vulnerabilities']) && is_array($decoded['vulnerabilities'])) {
+            return $this->advisoriesFromReport($decoded['vulnerabilities']);
+        }
+
+        if (isset($decoded['advisories']) && is_array($decoded['advisories'])) {
+            return $this->advisoriesFromLegacy($decoded['advisories']);
+        }
+
+        return [];
+    }
+
+    /**
+     * npm v7+: each top-level entry is a vulnerable package whose `via` array
+     * holds either advisory objects (the real source) or strings naming another
+     * package in the dependency chain. We keep the objects, deduplicated by
+     * their advisory `source` id since the same advisory can surface under
+     * several packages.
+     *
+     * @param  array<string, mixed>  $vulnerabilities
+     * @return array<int, array<string, mixed>>
+     */
+    private function advisoriesFromReport(array $vulnerabilities): array
+    {
+        $advisories = [];
+
+        foreach ($vulnerabilities as $packageName => $vulnerability) {
+            if (! is_array($vulnerability)) {
+                continue;
+            }
+
+            $via = $vulnerability['via'] ?? [];
+
+            if (! is_array($via)) {
+                continue;
+            }
+
+            $fixAvailable = $this->normalizeFixAvailable($vulnerability['fixAvailable'] ?? null);
+
+            foreach ($via as $source) {
+                if (! is_array($source)) {
+                    continue;
+                }
+
+                $advisory = [
+                    'package' => (string) ($source['name'] ?? $packageName),
+                    'severity' => $source['severity'] ?? ($vulnerability['severity'] ?? null),
+                    'cve' => null,
+                    'title' => $source['title'] ?? null,
+                    'affected_versions' => $source['range'] ?? ($vulnerability['range'] ?? null),
+                    'link' => $source['url'] ?? null,
+                    'fix_available' => $fixAvailable,
+                ];
+
+                if (isset($source['source'])) {
+                    $advisories[(string) $source['source']] = $advisory;
+                } else {
+                    $advisories[] = $advisory;
+                }
+            }
+        }
+
+        return array_values($advisories);
+    }
+
+    /**
+     * npm v6: top-level "advisories" is a map of advisory id to a record with
+     * snake_cased fields and a `cves` list.
+     *
+     * @param  array<int|string, mixed>  $advisories
+     * @return array<int, array<string, mixed>>
+     */
+    private function advisoriesFromLegacy(array $advisories): array
+    {
+        $normalized = [];
+
+        foreach ($advisories as $advisory) {
+            if (! is_array($advisory)) {
+                continue;
+            }
+
+            $cves = $advisory['cves'] ?? [];
+            $patched = $advisory['patched_versions'] ?? null;
+
+            $normalized[] = [
+                'package' => (string) ($advisory['module_name'] ?? ''),
+                'severity' => $advisory['severity'] ?? null,
+                'cve' => is_array($cves) && isset($cves[0]) ? (string) $cves[0] : null,
+                'title' => $advisory['title'] ?? null,
+                'affected_versions' => $advisory['vulnerable_versions'] ?? null,
+                'link' => $advisory['url'] ?? null,
+                'fix_available' => is_string($patched) && $patched !== '' && $patched !== '<0.0.0',
+            ];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * npm reports `fixAvailable` as a bool, or an object describing the upgrade
+     * target — the target version is the useful part when present.
+     *
+     * @param  mixed  $fixAvailable
+     */
+    private function normalizeFixAvailable($fixAvailable): bool|string
+    {
+        if (is_array($fixAvailable)) {
+            return isset($fixAvailable['version']) ? (string) $fixAvailable['version'] : true;
+        }
+
+        return (bool) $fixAvailable;
     }
 }

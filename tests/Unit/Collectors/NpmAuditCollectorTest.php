@@ -25,7 +25,111 @@ test('a clean audit reports ok with zeroed counts', function () {
     $result = (new NpmAuditCollector($runner, npmAuditProject(), finderWith(['npm'])))->collect();
 
     expect($result->status)->toBe('ok')
-        ->and($result->data['vulnerabilities']['total'])->toBe(0);
+        ->and($result->data['vulnerabilities']['total'])->toBe(0)
+        ->and($result->data['advisories_count'])->toBe(0)
+        ->and($result->data['advisories'])->toBe([]);
+});
+
+test('npm v7 advisories are extracted with package detail', function () {
+    $payload = json_encode([
+        'auditReportVersion' => 2,
+        'vulnerabilities' => [
+            'axios' => [
+                'name' => 'axios',
+                'severity' => 'critical',
+                'isDirect' => true,
+                'via' => [
+                    [
+                        'source' => 1098583,
+                        'name' => 'axios',
+                        'dependency' => 'axios',
+                        'title' => 'Server-Side Request Forgery in axios',
+                        'url' => 'https://github.com/advisories/GHSA-8hc4-vh64-cxmj',
+                        'severity' => 'critical',
+                        'range' => '>=1.3.2 <1.7.4',
+                    ],
+                    'follow-redirects',
+                ],
+                'range' => '>=1.3.2 <1.7.4',
+                'fixAvailable' => ['name' => 'axios', 'version' => '1.7.4', 'isSemVerMajor' => false],
+            ],
+        ],
+        'metadata' => ['vulnerabilities' => ['info' => 0, 'low' => 0, 'moderate' => 0, 'high' => 0, 'critical' => 1, 'total' => 1]],
+    ], JSON_THROW_ON_ERROR);
+
+    $runner = (new FakeProcessRunner)->on('npm', new ProcessResult(false, $payload, '', 1));
+
+    $result = (new NpmAuditCollector($runner, npmAuditProject(), finderWith(['npm'])))->collect();
+
+    expect($result->status)->toBe('warning')
+        ->and($result->data['advisories_count'])->toBe(1)
+        ->and($result->data['advisories'][0])->toBe([
+            'package' => 'axios',
+            'severity' => 'critical',
+            'cve' => null,
+            'title' => 'Server-Side Request Forgery in axios',
+            'affected_versions' => '>=1.3.2 <1.7.4',
+            'link' => 'https://github.com/advisories/GHSA-8hc4-vh64-cxmj',
+            'fix_available' => '1.7.4',
+        ]);
+});
+
+test('the same advisory surfacing under several packages is reported once', function () {
+    $advisory = [
+        'source' => 1098583,
+        'name' => 'axios',
+        'title' => 'Server-Side Request Forgery in axios',
+        'url' => 'https://github.com/advisories/GHSA-8hc4-vh64-cxmj',
+        'severity' => 'high',
+        'range' => '<1.7.4',
+    ];
+
+    $payload = json_encode([
+        'vulnerabilities' => [
+            'axios' => ['name' => 'axios', 'severity' => 'high', 'via' => [$advisory], 'fixAvailable' => true],
+            '@scope/sdk' => ['name' => '@scope/sdk', 'severity' => 'high', 'via' => [$advisory], 'fixAvailable' => false],
+        ],
+        'metadata' => ['vulnerabilities' => ['high' => 2, 'total' => 2]],
+    ], JSON_THROW_ON_ERROR);
+
+    $runner = (new FakeProcessRunner)->on('npm', new ProcessResult(false, $payload, '', 1));
+
+    $result = (new NpmAuditCollector($runner, npmAuditProject(), finderWith(['npm'])))->collect();
+
+    expect($result->data['advisories_count'])->toBe(1);
+});
+
+test('npm v6 legacy advisories are extracted', function () {
+    $payload = json_encode([
+        'advisories' => [
+            '1065' => [
+                'id' => 1065,
+                'module_name' => 'lodash',
+                'severity' => 'high',
+                'title' => 'Prototype Pollution',
+                'url' => 'https://npmjs.com/advisories/1065',
+                'vulnerable_versions' => '<4.17.12',
+                'patched_versions' => '>=4.17.12',
+                'cves' => ['CVE-2019-10744'],
+            ],
+        ],
+        'metadata' => ['vulnerabilities' => ['info' => 0, 'low' => 0, 'moderate' => 0, 'high' => 1, 'critical' => 0]],
+    ], JSON_THROW_ON_ERROR);
+
+    $runner = (new FakeProcessRunner)->on('npm', new ProcessResult(false, $payload, '', 1));
+
+    $result = (new NpmAuditCollector($runner, npmAuditProject(), finderWith(['npm'])))->collect();
+
+    expect($result->status)->toBe('warning')
+        ->and($result->data['advisories'][0])->toBe([
+            'package' => 'lodash',
+            'severity' => 'high',
+            'cve' => 'CVE-2019-10744',
+            'title' => 'Prototype Pollution',
+            'affected_versions' => '<4.17.12',
+            'link' => 'https://npmjs.com/advisories/1065',
+            'fix_available' => true,
+        ]);
 });
 
 test('vulnerabilities are reported as a warning with severity counts', function () {

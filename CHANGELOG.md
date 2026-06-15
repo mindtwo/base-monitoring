@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `npm_audit` now reports the individual advisories (`advisories` / `advisories_count`)
+  alongside the existing severity counts, so the dashboard can show *which* packages are
+  affected. Each advisory carries `package`, `severity`, `cve`, `title`, `affected_versions`,
+  `link` and `fix_available` — the same shape as `composer_audit`. Both the npm v7+ report
+  (`vulnerabilities` map with `via`) and the legacy v6 `advisories` map are supported.
 - The snapshot `source` now reports the producing host's IP as `server_ip` (detected
   identically for push and pull, `null` when it cannot be determined), so the central
   dashboard can identify which server a snapshot came from.

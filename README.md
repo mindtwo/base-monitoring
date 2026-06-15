@@ -33,7 +33,7 @@ Framework plugins build on this core:
 | `npm_packages` | parsed offline from `package-lock.json` (v1–v3), `npm-shrinkwrap.json`, `yarn.lock` (classic & berry) or `pnpm-lock.yaml` (v6 & v9) |
 | `composer_audit` | `composer audit --format=json` — advisories and abandoned packages |
 | `composer_licenses` | `composer licenses --format=json` — license summary and per-package list |
-| `npm_audit` | `npm audit --json` — vulnerability counts by severity |
+| `npm_audit` | `npm audit --json` — severity counts plus per-advisory detail |
 | `git` | branch, commit, dirty state, changed files (capped) |
 
 Detected software is normalized to a **technology slug** pinned from
@@ -137,6 +137,7 @@ adds a key and never requires a schema migration. Empty `custom_data` serializes
     "os":  { "status": "ok", "technology": "ubuntu", "version": "22.04", "family": "Linux", "name": "Ubuntu 22.04.4 LTS", "kernel": "5.15.0-101-generic" },
     "php": { "status": "ok", "technology": "php", "version": "8.3.2", "sapi": "fpm-fcgi", "memory_limit": "256M" },
     "composer_audit": { "status": "warning", "advisories_count": 1, "advisories": [ { "package": "acme/http", "severity": "high", "cve": "CVE-2026-0001", "title": "…", "affected_versions": "<2.0.1", "link": "…" } ], "abandoned_count": 0, "abandoned": {} },
+    "npm_audit": { "status": "warning", "vulnerabilities": { "info": 0, "low": 0, "moderate": 0, "high": 1, "critical": 0, "total": 1 }, "advisories_count": 1, "advisories": [ { "package": "axios", "severity": "high", "cve": null, "title": "Server-Side Request Forgery in axios", "affected_versions": "<1.7.4", "link": "https://github.com/advisories/GHSA-8hc4-vh64-cxmj", "fix_available": "1.7.4" } ] },
     "nginx": { "status": "unsupported" }
   },
   "technologies": [
