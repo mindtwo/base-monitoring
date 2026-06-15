@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- The snapshot `source` now reports the producing host's IP as `server_ip` (detected
+  identically for push and pull, `null` when it cannot be determined), so the central
+  dashboard can identify which server a snapshot came from.
+
 ### Fixed
 
 - `composer_audit`, `composer_licenses` and `npm_audit` no longer fail with

@@ -37,6 +37,7 @@ test('a snapshot serializes the canonical payload shape', function () {
             'package' => 'mindtwo/laravel-monitoring',
             'version' => '1.2.0',
             'base_version' => '1.0.3',
+            'server_ip' => null,
         ])
         ->and($payload['metrics']['php'])->toBe(['status' => 'ok', 'technology' => 'php', 'version' => '8.3.2'])
         ->and($payload['metrics']['nginx'])->toBe(['status' => 'unsupported']);

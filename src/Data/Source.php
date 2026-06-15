@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Mindtwo\Monitoring\Data;
 
 use Mindtwo\Monitoring\Support\InstalledVersion;
+use Mindtwo\Monitoring\Support\ServerIp;
 
 /**
  * Identifies the producer of a snapshot, so the central dashboard knows which
- * plugin and which version reported.
+ * plugin and which version reported, and from which host (server IP).
  */
 final class Source
 {
@@ -26,7 +27,8 @@ final class Source
         public string $type,
         public string $package,
         public string $version,
-        public string $baseVersion
+        public string $baseVersion,
+        public ?string $serverIp = null
     ) {}
 
     /**
@@ -36,7 +38,7 @@ final class Source
     {
         $baseVersion = InstalledVersion::of('mindtwo/base-monitoring');
 
-        return new self(self::TYPE_LIBRARY, 'mindtwo/base-monitoring', $baseVersion, $baseVersion);
+        return new self(self::TYPE_LIBRARY, 'mindtwo/base-monitoring', $baseVersion, $baseVersion, ServerIp::detect());
     }
 
     /**
@@ -48,12 +50,13 @@ final class Source
             $type,
             $package,
             InstalledVersion::of($package),
-            InstalledVersion::of('mindtwo/base-monitoring')
+            InstalledVersion::of('mindtwo/base-monitoring'),
+            ServerIp::detect()
         );
     }
 
     /**
-     * @return array<string, string>
+     * @return array<string, string|null>
      */
     public function toArray(): array
     {
@@ -62,6 +65,7 @@ final class Source
             'package' => $this->package,
             'version' => $this->version,
             'base_version' => $this->baseVersion,
+            'server_ip' => $this->serverIp,
         ];
     }
 }

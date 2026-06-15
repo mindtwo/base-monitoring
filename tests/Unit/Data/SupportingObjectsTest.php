@@ -17,14 +17,21 @@ test('credentials know whether they are complete', function () {
 });
 
 test('a source serializes to snake_case keys', function () {
-    $source = new Source(Source::TYPE_LARAVEL, 'mindtwo/laravel-monitoring', '1.2.0', '1.0.3');
+    $source = new Source(Source::TYPE_LARAVEL, 'mindtwo/laravel-monitoring', '1.2.0', '1.0.3', '203.0.113.7');
 
     expect($source->toArray())->toBe([
         'type' => 'laravel',
         'package' => 'mindtwo/laravel-monitoring',
         'version' => '1.2.0',
         'base_version' => '1.0.3',
+        'server_ip' => '203.0.113.7',
     ]);
+});
+
+test('a source without a detectable server ip serializes a null', function () {
+    $source = new Source(Source::TYPE_LIBRARY, 'mindtwo/base-monitoring', '1.0.3', '1.0.3');
+
+    expect($source->toArray()['server_ip'])->toBeNull();
 });
 
 test('the library source resolves its own installed version', function () {
