@@ -5,31 +5,7 @@ All notable changes to `mindtwo/base-monitoring` will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-
-### Added
-
-- `npm_audit` now reports the individual advisories (`advisories` / `advisories_count`)
-  alongside the existing severity counts, so the dashboard can show *which* packages are
-  affected. Each advisory carries `package`, `severity`, `cve`, `title`, `affected_versions`,
-  `link` and `fix_available` — the same shape as `composer_audit`. Both the npm v7+ report
-  (`vulnerabilities` map with `via`) and the legacy v6 `advisories` map are supported.
-- The snapshot `source` now reports the producing host's IP as `server_ip` (detected
-  identically for push and pull, `null` when it cannot be determined), so the central
-  dashboard can identify which server a snapshot came from.
-
-### Fixed
-
-- `composer_audit`, `composer_licenses` and `npm_audit` no longer fail with
-  `env: php: No such file or directory` / `env: node: No such file or directory`
-  when run under a restricted PATH (php-fpm, cron, launchd). The `ExecutableFinder`
-  could locate the `composer`/`npm` wrappers via its fallback directories, but the
-  spawned process did not inherit a PATH wide enough for the interpreter those
-  wrappers re-exec through `#!/usr/bin/env php|node`. Process runs now accept extra
-  PATH directories, and the affected collectors pass the directory of their
-  interpreter (composer → php, npm → node) so the shebang resolves.
-
-## 1.0.0 - 2026-06-13
+## 1.0.0 - 2026-06-19
 
 Initial release.
 
@@ -64,3 +40,22 @@ Initial release.
 - Technology slug resolution against a pinned endoflife.date registry (381 slugs) with alias
   map and package/repository-derived fallbacks; `composer refresh-slugs` regenerator.
 - `IpMatcher` supporting plain IPs and CIDR ranges (IPv4/IPv6) for plugin allow-lists.
+- `npm_audit` reports the individual advisories (`advisories` / `advisories_count`)
+  alongside the severity counts, so the dashboard can show *which* packages are affected.
+  Each advisory carries `package`, `severity`, `cve`, `title`, `affected_versions`, `link`
+  and `fix_available` — the same shape as `composer_audit`. Both the npm v7+ report
+  (`vulnerabilities` map with `via`) and the legacy v6 `advisories` map are supported.
+- The snapshot `source` reports the producing host's IP as `server_ip` (detected identically
+  for push and pull, `null` when it cannot be determined), so the central dashboard can
+  identify which server a snapshot came from.
+
+### Fixed
+
+- `composer_audit`, `composer_licenses` and `npm_audit` no longer fail with
+  `env: php: No such file or directory` / `env: node: No such file or directory`
+  when run under a restricted PATH (php-fpm, cron, launchd). The `ExecutableFinder`
+  could locate the `composer`/`npm` wrappers via its fallback directories, but the
+  spawned process did not inherit a PATH wide enough for the interpreter those
+  wrappers re-exec through `#!/usr/bin/env php|node`. Process runs now accept extra
+  PATH directories, and the affected collectors pass the directory of their
+  interpreter (composer → php, npm → node) so the shebang resolves.
